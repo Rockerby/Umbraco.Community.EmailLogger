@@ -1,0 +1,14 @@
+{
+  "id": "Umbraco.Community.EmailLogger",
+  "name": "Umbraco.Community.EmailLogger",
+  "version": "0.0.0",
+  "allowPackageTelemetry": true,
+  "extensions": [
+    {
+      "name": "Umbraco Community Email Logger Bundle",
+      "alias": "Umbraco.Community.EmailLogger.Bundle",
+      "type": "bundle",
+      "js": "/App_Plugins/UmbracoCommunityEmailLogger/umbraco-community-email-logger.js"
+    }
+  ]
+}
