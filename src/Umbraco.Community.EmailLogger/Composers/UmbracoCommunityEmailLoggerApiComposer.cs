@@ -16,6 +16,10 @@ using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Infrastructure.Mail.Interfaces;
 using Umbraco.Community.EmailLogger.BackOffice.Services;
 using Umbraco.Cms.Core.Mail;
+using Umbraco.Extensions;
+using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Persistence.EFCore.Scoping;
+using Umbraco.Community.EmailLogger.Context;
 
 namespace Umbraco.Community.EmailLogger.Composers
 {
@@ -24,6 +28,14 @@ namespace Umbraco.Community.EmailLogger.Composers
         public void Compose(IUmbracoBuilder builder)
         {
 
+            builder.Services.AddUmbracoDbContext<EmailLogContext>((serviceProvider, options) =>
+            {
+                options.UseUmbracoDatabaseProvider(serviceProvider);
+            });
+
+            //builder.Services.Remove<IEmailSender>();
+            //var serviceDescriptor = builder.Services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(IEmailSender));
+            //builder.Services.Remove(serviceDescriptor);
             builder.Services.AddSingleton<IEmailSender, EmailLogSender>(
                 services => new EmailLogSender(
                   services.GetRequiredService<ILogger<EmailLogSender>>(),
@@ -31,7 +43,9 @@ namespace Umbraco.Community.EmailLogger.Composers
                   services.GetRequiredService<IEventAggregator>(),
                   services.GetRequiredService<IEmailSenderClient>(),
                   services.GetService<INotificationHandler<SendEmailNotification>>(),
-                  services.GetService<INotificationAsyncHandler<SendEmailNotification>>()));
+                  services.GetService<INotificationAsyncHandler<SendEmailNotification>>(),
+                  services.GetService<IEFCoreScopeProvider<EmailLogContext>>()
+                 ));
 
             builder.Services.AddSingleton<IOperationIdHandler, CustomOperationHandler>();
 

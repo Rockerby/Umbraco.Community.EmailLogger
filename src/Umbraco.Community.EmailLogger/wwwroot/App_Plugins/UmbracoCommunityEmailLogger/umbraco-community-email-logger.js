@@ -3,14 +3,14 @@ const a = [
     name: "Umbraco Community Email Logger Entrypoint",
     alias: "Umbraco.Community.EmailLogger.Entrypoint",
     type: "backofficeEntryPoint",
-    js: () => import("./entrypoint-CMLYewe2.js")
+    js: () => import("./entrypoint-A6cli0Iz.js")
   }
 ], o = [
   {
     name: "Umbraco Community Email Logger Dashboard",
     alias: "Umbraco.Community.EmailLogger.Dashboard",
     type: "dashboard",
-    js: () => import("./dashboard.element-DkicdWmv.js"),
+    js: () => import("./dashboard.element-Ooq1EO1g.js"),
     meta: {
       label: "Example Dashboard",
       pathname: "example-dashboard"

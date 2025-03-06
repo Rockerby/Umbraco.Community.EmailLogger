@@ -19,6 +19,34 @@ export const DocumentGranularPermissionModelSchema = {
     additionalProperties: false
 } as const;
 
+export const EmailLogSchema = {
+    required: ['emailLogUmbracoKey', 'id', 'isSuccessful', 'message', 'recipients', 'subject'],
+    type: 'object',
+    properties: {
+        id: {
+            type: 'integer',
+            format: 'int32'
+        },
+        emailLogUmbracoKey: {
+            type: 'string',
+            format: 'uuid'
+        },
+        recipients: {
+            type: 'string'
+        },
+        subject: {
+            type: 'string'
+        },
+        message: {
+            type: 'string'
+        },
+        isSuccessful: {
+            type: 'boolean'
+        }
+    },
+    additionalProperties: false
+} as const;
+
 export const ReadOnlyUserGroupModelSchema = {
     required: ['alias', 'allowedLanguages', 'allowedSections', 'granularPermissions', 'hasAccessToAllLanguages', 'id', 'key', 'name', 'permissions'],
     type: 'object',

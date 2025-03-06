@@ -1,6 +1,6 @@
-import { LitElement, css, html, customElement, state } from "@umbraco-cms/backoffice/external/lit";
+import { LitElement, css, html, customElement, state, repeat } from "@umbraco-cms/backoffice/external/lit";
 import { UmbElementMixin } from "@umbraco-cms/backoffice/element-api";
-import { UmbracoCommunityEmailLoggerService, UserModel } from "../api";
+import { EmailLog, UmbracoCommunityEmailLoggerService, UserModel } from "../api";
 import { UUIButtonElement } from "@umbraco-cms/backoffice/external/uui";
 import { UMB_NOTIFICATION_CONTEXT, UmbNotificationContext } from "@umbraco-cms/backoffice/notification";
 import { UMB_CURRENT_USER_CONTEXT, UmbCurrentUserModel } from "@umbraco-cms/backoffice/current-user";
@@ -18,7 +18,13 @@ export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
   private _serverUserData: UserModel | undefined = undefined;
 
   @state()
+  private _userData: Array<EmailLog> = [];
+
+  @state()
   private _contextCurrentUser: UmbCurrentUserModel | undefined = undefined;
+
+  @state()
+  private _showCode: boolean = true;
 
   constructor() {
     super();
@@ -42,9 +48,10 @@ export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
 
   #onClickWhoAmI = async (ev: Event) => {
     const buttonElement = ev.target as UUIButtonElement;
+    const prettyButton = document.getElementById('btnTogglePretty') as UUIButtonElement;
     buttonElement.state = "waiting";
 
-    const { data, error } = await UmbracoCommunityEmailLoggerService.whoAmI();
+    const { data, error } = await UmbracoCommunityEmailLoggerService.all();
 
     if (error) {
       buttonElement.state = "failed";
@@ -53,18 +60,22 @@ export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
     }
 
     if (data !== undefined) {
-      this._serverUserData = data;
+      this._userData = data;
       buttonElement.state = "success";
+      prettyButton.disabled = false;
     }
 
-    if (this.#notificationContext) {
+    /*if (this.#notificationContext) {
       this.#notificationContext.peek("warning", {
         data: {
           headline: `You are ${this._serverUserData?.name}`,
           message: `Your email is ${this._serverUserData?.email}`,
         }
       })
-    }
+    }*/
+  }
+  #togglePretty = async (ev: Event) => {
+    this._showCode = !this._showCode;
   }
 
   #onClickWhatsTheTimeMrWolf = async (ev: Event) => {
@@ -104,44 +115,48 @@ export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
 
   render() {
     return html`
-        <uui-box headline="Who am I?">
+        <uui-box headline="Want to see some logs?">
             <div slot="header">[Server]</div>
-            <h2><uui-icon name="icon-user"></uui-icon>${this._serverUserData?.email ? this._serverUserData.email : 'Press the button!'}</h2>
-            <ul>
-                ${this._serverUserData?.groups.map(group => html`<li>${group.name}</li>`)}
-            </ul>
             <uui-button color="default" look="primary" @click="${this.#onClickWhoAmI}">
-                Who am I?
+                Go get data
             </uui-button>
-            <p>This endpoint gets your current user from the server and displays your email and list of user groups.
-            It also displays a Notification with your details.</p>
+            <uui-button color="default" look="secondary"  @click="${this.#togglePretty}">
+                Toggle pretty HTML
+            </uui-button>
+        </uui-box>
+                
+        <uui-box headline="Email Logs" class="wide">
+          <uui-table id="users-wrapper">
+				  <uui-table-row>
+					  <uui-table-head-cell>Recipient</uui-table-head-cell>
+					  <uui-table-head-cell>Subject</uui-table-head-cell>
+					  <uui-table-head-cell>Sent</uui-table-head-cell>
+					  <uui-table-head-cell>Message</uui-table-head-cell>
+				  </uui-table-row>
+				  ${repeat(this._userData, (user) => user.id, (user) => this._renderEmailLog(user))}
+			  </uui-table>
         </uui-box>
 
-        <uui-box headline="What's my Name?">
-            <div slot="header">[Server]</div>
-            <h2><uui-icon name="icon-user"></uui-icon> ${this._yourName }</h2>
-            <uui-button color="default" look="primary" @click="${this.#onClickWhatsMyName}">
-                Whats my name?
-            </uui-button>
-            <p>This endpoint has a forced delay to show the button 'waiting' state for a few seconds before completing the request.</p>
-        </uui-box>
-
-        <uui-box headline="What's the Time?">
-            <div slot="header">[Server]</div>
-            <h2><uui-icon name="icon-alarm-clock"></uui-icon> ${this._timeFromMrWolf ? this._timeFromMrWolf.toLocaleString() : 'Press the button!'}</h2>
-            <uui-button color="default" look="primary" @click="${this.#onClickWhatsTheTimeMrWolf}">
-                Whats the time Mr Wolf?
-            </uui-button>
-            <p>This endpoint gets the current date and time from the server.</p>
-        </uui-box>
-
-        <uui-box headline="Who am I?" class="wide">
-          <div slot="header">[Context]</div>
-          <p>Current user email: <b>${this._contextCurrentUser?.email}</b></p>
-          <p>This is the JSON object available by consuming the 'UMB_CURRENT_USER_CONTEXT' context:</p>
-          <umb-code-block language="json" copy>${JSON.stringify(this._contextCurrentUser, null, 2)}</umb-code-block>
-        </uui-box>
     `;
+  }
+
+  private _renderEmailLog(user: EmailLog) {
+    if (!user) return;
+    return html`<uui-table-row class="user">
+        <uui-table-cell>${user.recipients}</uui-table-cell>
+        <uui-table-cell>${user.subject}</uui-table-cell>
+        <uui-table-cell>${user.isSuccessful ? 'YES' : 'No'}</uui-table-cell>
+        <uui-table-cell><div class="htmlbox">${this.rawHTML(user.message)}</div></uui-table-cell>
+    </uui-table-row>`;
+  }
+
+  private rawHTML(html: string) {
+    if (this._showCode) {
+      return html;
+    }
+
+    var frag = document.createRange().createContextualFragment(`${html}`);
+    return frag;
   }
 
   static styles = [
@@ -163,6 +178,11 @@ export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
 
             .wide {
                 grid-column: span 3;
+            }
+            .htmlbox {
+              max-width:800px;
+              height:300px;
+              overflow-y: scroll;
             }
     `];
 }

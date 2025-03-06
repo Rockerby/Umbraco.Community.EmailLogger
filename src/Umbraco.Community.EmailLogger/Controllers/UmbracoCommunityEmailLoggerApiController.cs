@@ -1,8 +1,12 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Serilog.Context;
 using Umbraco.Cms.Core.Models.Membership;
 using Umbraco.Cms.Core.Security;
+using Umbraco.Cms.Persistence.EFCore.Scoping;
+using Umbraco.Community.EmailLogger.Context;
+using Umbraco.Community.EmailLogger.Models;
 
 namespace Umbraco.Community.EmailLogger.Controllers
 {
@@ -11,10 +15,13 @@ namespace Umbraco.Community.EmailLogger.Controllers
     public class UmbracoCommunityEmailLoggerApiController : UmbracoCommunityEmailLoggerApiControllerBase
     {
         private readonly IBackOfficeSecurityAccessor _backOfficeSecurityAccessor;
+        private readonly IEFCoreScopeProvider<EmailLogContext> _efCoreScopeProvider;
 
-        public UmbracoCommunityEmailLoggerApiController(IBackOfficeSecurityAccessor backOfficeSecurityAccessor)
+        public UmbracoCommunityEmailLoggerApiController(IBackOfficeSecurityAccessor backOfficeSecurityAccessor,
+            IEFCoreScopeProvider<EmailLogContext> efCoreScopeProvider)
         {
             _backOfficeSecurityAccessor = backOfficeSecurityAccessor;
+            _efCoreScopeProvider = efCoreScopeProvider;
         }
 
         [HttpGet("ping")]
@@ -39,5 +46,15 @@ namespace Umbraco.Community.EmailLogger.Controllers
         [HttpGet("whoAmI")]
         [ProducesResponseType<IUser>(StatusCodes.Status200OK)]
         public IUser? WhoAmI() => _backOfficeSecurityAccessor.BackOfficeSecurity?.CurrentUser;
+
+        [HttpGet("all")]
+        [ProducesResponseType<IEnumerable<EmailLog>>(StatusCodes.Status200OK)]
+        public async Task<IEnumerable<EmailLog>> All()
+        {
+            using IEfCoreScope<EmailLogContext> scope = _efCoreScopeProvider.CreateScope();
+            IEnumerable<EmailLog> comments = await scope.ExecuteWithContextAsync(async db => db.EmailLogs.ToArray());
+            scope.Complete();
+            return comments;
+        }
     }
 }

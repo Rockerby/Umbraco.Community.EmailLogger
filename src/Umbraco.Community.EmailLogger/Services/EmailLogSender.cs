@@ -1,4 +1,4 @@
-﻿using global::Umbraco.Cms.Core.Configuration.Models;
+using global::Umbraco.Cms.Core.Configuration.Models;
 using global::Umbraco.Cms.Core.Events;
 using global::Umbraco.Cms.Core.Models.Email;
 using global::Umbraco.Cms.Core.Notifications;
@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using MimeKit.IO;
+using Serilog.Context;
 using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Events;
@@ -21,7 +22,9 @@ using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Infrastructure.Extensions;
 using Umbraco.Cms.Infrastructure.Mail;
 using Umbraco.Cms.Infrastructure.Mail.Interfaces;
+using Umbraco.Cms.Persistence.EFCore.Scoping;
 using Umbraco.Community.EmailLogger.BackOffice.Extensions;
+using Umbraco.Community.EmailLogger.Context;
 
 namespace Umbraco.Community.EmailLogger.BackOffice.Services
 {
@@ -36,6 +39,7 @@ namespace Umbraco.Community.EmailLogger.BackOffice.Services
         private readonly bool _notificationHandlerRegistered;
         private GlobalSettings _globalSettings;
         private readonly IEmailSenderClient _emailSenderClient;
+        private readonly IEFCoreScopeProvider<EmailLogContext> _efCoreScopeProvider;
 
         [ActivatorUtilitiesConstructor]
         public EmailLogSender(
@@ -44,7 +48,8 @@ namespace Umbraco.Community.EmailLogger.BackOffice.Services
             IEventAggregator eventAggregator,
             IEmailSenderClient emailSenderClient,
             INotificationHandler<SendEmailNotification>? handler1,
-            INotificationAsyncHandler<SendEmailNotification>? handler2)
+            INotificationAsyncHandler<SendEmailNotification>? handler2,
+            IEFCoreScopeProvider<EmailLogContext> efCoreScopeProvider)
         {
             _logger = logger;
             _eventAggregator = eventAggregator;
@@ -52,6 +57,7 @@ namespace Umbraco.Community.EmailLogger.BackOffice.Services
             _notificationHandlerRegistered = handler1 is not null || handler2 is not null;
             _emailSenderClient = emailSenderClient;
             globalSettings.OnChange(x => _globalSettings = x);
+            _efCoreScopeProvider = efCoreScopeProvider;
         }
 
         /// <summary>
@@ -155,8 +161,43 @@ namespace Umbraco.Community.EmailLogger.BackOffice.Services
                 }
                 while (true);
             }
+            try
+            {
+                await _emailSenderClient.SendAsync(message);
 
-            await _emailSenderClient.SendAsync(message);
+                using IEfCoreScope<EmailLogContext> scope = _efCoreScopeProvider.CreateScope();
+
+                await scope.ExecuteWithContextAsync<Task>(async db =>
+                {
+                    db.EmailLogs.Add(new Models.EmailLog()
+                    {
+                        Recipients = String.Join(", ", message.To),
+                        Subject = message.Subject ?? "",
+                        IsSuccessful = true,
+                        Message = message.Body ?? ""
+                    });
+                    await db.SaveChangesAsync();
+                });
+
+                scope.Complete();
+            }
+             catch(Exception ex)
+            {
+                using IEfCoreScope<EmailLogContext> scope = _efCoreScopeProvider.CreateScope();
+
+                await scope.ExecuteWithContextAsync<Task>(async db =>
+                {
+                    db.EmailLogs.Add(new Models.EmailLog() {
+                        Recipients = String.Join(", ", message.To),
+                        Subject = message.Subject ?? "",
+                        IsSuccessful = false,
+                        Message = message.Body ?? ""
+                    });
+                    await db.SaveChangesAsync();
+                });
+
+                scope.Complete();
+            }
         }
 
     }
