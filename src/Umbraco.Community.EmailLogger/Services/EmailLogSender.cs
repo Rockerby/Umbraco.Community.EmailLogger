@@ -174,7 +174,8 @@ namespace Umbraco.Community.EmailLogger.BackOffice.Services
                         Recipients = String.Join(", ", message.To),
                         Subject = message.Subject ?? "",
                         IsSuccessful = true,
-                        Message = message.Body ?? ""
+                        Message = message.Body ?? "",
+                        DateSent = DateTime.Now
                     });
                     await db.SaveChangesAsync();
                 });
@@ -191,7 +192,8 @@ namespace Umbraco.Community.EmailLogger.BackOffice.Services
                         Recipients = String.Join(", ", message.To),
                         Subject = message.Subject ?? "",
                         IsSuccessful = false,
-                        Message = message.Body ?? ""
+                        Message = message.Body ?? "",
+                        DateSent = DateTime.Now
                     });
                     await db.SaveChangesAsync();
                 });

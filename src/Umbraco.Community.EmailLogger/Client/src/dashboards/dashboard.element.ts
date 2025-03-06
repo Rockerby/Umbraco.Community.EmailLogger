@@ -1,27 +1,15 @@
 import { LitElement, css, html, customElement, state, repeat } from "@umbraco-cms/backoffice/external/lit";
 import { UmbElementMixin } from "@umbraco-cms/backoffice/element-api";
-import { EmailLog, UmbracoCommunityEmailLoggerService, UserModel } from "../api";
+import { EmailLog, UmbracoCommunityEmailLoggerService } from "../api";
 import { UUIButtonElement } from "@umbraco-cms/backoffice/external/uui";
-import { UMB_NOTIFICATION_CONTEXT, UmbNotificationContext } from "@umbraco-cms/backoffice/notification";
-import { UMB_CURRENT_USER_CONTEXT, UmbCurrentUserModel } from "@umbraco-cms/backoffice/current-user";
+// import { UMB_NOTIFICATION_CONTEXT } from "@umbraco-cms/backoffice/notification";
+// import { UMB_CURRENT_USER_CONTEXT } from "@umbraco-cms/backoffice/current-user";
 
 @customElement('example-dashboard')
 export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
 
   @state()
-  private _yourName: string | undefined = "Press the button!";
-
-  @state()
-  private _timeFromMrWolf: Date | undefined;
-
-  @state()
-  private _serverUserData: UserModel | undefined = undefined;
-
-  @state()
   private _userData: Array<EmailLog> = [];
-
-  @state()
-  private _contextCurrentUser: UmbCurrentUserModel | undefined = undefined;
 
   @state()
   private _showCode: boolean = true;
@@ -29,22 +17,21 @@ export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
   constructor() {
     super();
 
-    this.consumeContext(UMB_NOTIFICATION_CONTEXT, (notificationContext) => {
-      this.#notificationContext = notificationContext;
-    });
+    // this.consumeContext(UMB_NOTIFICATION_CONTEXT, (notificationContext) => {
+    //   this.#notificationContext = notificationContext;
+    // });
 
-    this.consumeContext(UMB_CURRENT_USER_CONTEXT, (currentUserContext) => {
+    // this.consumeContext(UMB_CURRENT_USER_CONTEXT, (currentUserContext) => {
 
-      // When we have the current user context
-      // We can observe properties from it, such as the current user or perhaps just individual properties
-      // When the currentUser object changes we will get notified and can reset the @state properrty
-      this.observe(currentUserContext.currentUser, (currentUser) => {
-        this._contextCurrentUser = currentUser;
-      });
-    });
+    //   // When we have the current user context
+    //   // We can observe properties from it, such as the current user or perhaps just individual properties
+    //   // When the currentUser object changes we will get notified and can reset the @state properrty
+    //   this.observe(currentUserContext.currentUser, (currentUser) => {
+    //     this._contextCurrentUser = currentUser;
+    //   });
+    // });
   }
 
-  #notificationContext: UmbNotificationContext | undefined = undefined;
 
   #onClickWhoAmI = async (ev: Event) => {
     const buttonElement = ev.target as UUIButtonElement;
@@ -74,44 +61,10 @@ export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
       })
     }*/
   }
-  #togglePretty = async (ev: Event) => {
+  #togglePretty = async () => {
     this._showCode = !this._showCode;
   }
 
-  #onClickWhatsTheTimeMrWolf = async (ev: Event) => {
-    const buttonElement = ev.target as UUIButtonElement;
-    buttonElement.state = "waiting";
-
-    // Getting a string - should I expect a datetime?!
-    const { data, error } = await UmbracoCommunityEmailLoggerService.whatsTheTimeMrWolf();
-
-    if (error) {
-      buttonElement.state = "failed";
-      console.error(error);
-      return;
-    }
-
-    if (data !== undefined) {
-      this._timeFromMrWolf = new Date(data);
-      buttonElement.state = "success";
-    }
-  }
-
-  #onClickWhatsMyName = async (ev: Event) => {
-    const buttonElement = ev.target as UUIButtonElement;
-    buttonElement.state = "waiting";
-
-    const { data, error } = await UmbracoCommunityEmailLoggerService.whatsMyName();
-
-    if (error) {
-      buttonElement.state = "failed";
-      console.error(error);
-      return;
-    }
-
-    this._yourName = data;
-    buttonElement.state = "success";
-  }
 
   render() {
     return html`
@@ -128,6 +81,7 @@ export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
         <uui-box headline="Email Logs" class="wide">
           <uui-table id="users-wrapper">
 				  <uui-table-row>
+					  <uui-table-head-cell>Date Sent</uui-table-head-cell>
 					  <uui-table-head-cell>Recipient</uui-table-head-cell>
 					  <uui-table-head-cell>Subject</uui-table-head-cell>
 					  <uui-table-head-cell>Sent</uui-table-head-cell>
@@ -143,6 +97,7 @@ export class ExampleDashboardElement extends UmbElementMixin(LitElement) {
   private _renderEmailLog(user: EmailLog) {
     if (!user) return;
     return html`<uui-table-row class="user">
+        <uui-table-cell>${user.dateSent}</uui-table-cell>
         <uui-table-cell>${user.recipients}</uui-table-cell>
         <uui-table-cell>${user.subject}</uui-table-cell>
         <uui-table-cell>${user.isSuccessful ? 'YES' : 'No'}</uui-table-cell>

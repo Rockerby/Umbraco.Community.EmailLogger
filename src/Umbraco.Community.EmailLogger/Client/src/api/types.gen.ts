@@ -13,6 +13,7 @@ export type EmailLog = {
     subject: string;
     message: string;
     isSuccessful: boolean;
+    dateSent: string;
 };
 
 export type ReadOnlyUserGroupModel = {

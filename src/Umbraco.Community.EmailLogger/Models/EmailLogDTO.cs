@@ -14,5 +14,6 @@ namespace Umbraco.Community.EmailLogger.Models
         public required string Subject { get; set; }
         public string Message { get; set; } = string.Empty;
         public bool IsSuccessful { get; set; }
+        public DateTime DateSent { get; set; }
     }
 }

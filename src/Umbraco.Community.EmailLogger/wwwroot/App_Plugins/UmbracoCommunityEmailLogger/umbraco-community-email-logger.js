@@ -10,7 +10,7 @@ const a = [
     name: "Umbraco Community Email Logger Dashboard",
     alias: "Umbraco.Community.EmailLogger.Dashboard",
     type: "dashboard",
-    js: () => import("./dashboard.element-Ooq1EO1g.js"),
+    js: () => import("./dashboard.element-CxPcqtl1.js"),
     meta: {
       label: "Example Dashboard",
       pathname: "example-dashboard"

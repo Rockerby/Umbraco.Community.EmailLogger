@@ -27,6 +27,7 @@ namespace Umbraco.Community.EmailLogger.Context
                 entity.Property(e => e.Message).HasColumnName("message");
                 entity.Property(e => e.Subject).HasColumnName("subject");
                 entity.Property(e => e.Recipients).HasColumnName("recipients");
+                entity.Property(e => e.DateSent).HasColumnName("dateSent");
             });
     }
 }

@@ -20,7 +20,7 @@ export const DocumentGranularPermissionModelSchema = {
 } as const;
 
 export const EmailLogSchema = {
-    required: ['emailLogUmbracoKey', 'id', 'isSuccessful', 'message', 'recipients', 'subject'],
+    required: ['dateSent', 'emailLogUmbracoKey', 'id', 'isSuccessful', 'message', 'recipients', 'subject'],
     type: 'object',
     properties: {
         id: {
@@ -42,6 +42,10 @@ export const EmailLogSchema = {
         },
         isSuccessful: {
             type: 'boolean'
+        },
+        dateSent: {
+            type: 'string',
+            format: 'date-time'
         }
     },
     additionalProperties: false
